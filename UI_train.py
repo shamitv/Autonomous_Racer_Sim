@@ -4,7 +4,7 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtGui import QPixmap
 import sys
-import screencap
+import background_threds
 from PyQt5 import QtCore
 import json
 import time;
@@ -70,7 +70,7 @@ class UI(QApplication):
         self.browser.setGeometry(200, 200, 640 + margin, 480 + margin)
         self.browser.load(QUrl(url))
         self.browser.show()
-        self.thread = screencap.CaptureThread.ImageCaptureThread(ui=self, captureDir="./data/screens", interval=.05)
+        self.thread = background_threds.CaptureThread.ImageCaptureThread(ui=self, captureDir="./data/screens", interval=.05)
         self.thread.takeScreenShotSignal.connect(self.captureWindowImage)
         print("adding key filter")
         self.installKeyFilter()
