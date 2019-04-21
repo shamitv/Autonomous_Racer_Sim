@@ -44,6 +44,7 @@ i = 0
 
 data_dict={
     'imgId':[],
+    'imgFile': [],
     'UpArrow':[],
     'DownArrow':[],
     'LeftArrow':[],
@@ -54,6 +55,7 @@ data_dict={
 while(path.isfile(getImagePath(i))):
     data=getData(i)
     data_dict['imgId'].append(i)
+    data_dict['imgFile'].append(getImagePath(i))
     data_dict['UpArrow'].append(data['UpArrow'])
     data_dict['DownArrow'].append(data['DownArrow'])
     data_dict['LeftArrow'].append(data['LeftArrow'])
