@@ -1,75 +1,115 @@
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt, QObject
-from PyQt5.QtCore import QUrl
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtGui import QPixmap
 import sys
 import background_threds
-from PyQt5 import QtCore
-import json
-import time;
+import os
+import io
+import time
+from PIL import Image
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt, QUrl, QEvent
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtGui import QPixmap, QKeyEvent
+from PyQt5.QtCore import QBuffer
 
 from http.server import SimpleHTTPRequestHandler,HTTPServer
 from socketserver import ThreadingMixIn
 from threading import Thread
 
+from keras.models import load_model
+import numpy as np
+
 http_port = 8842
 
+def get_data_dir():
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    data_dir = os.path.join(script_dir,'data','set1')
+    return os.path.normpath(data_dir)
 
-class EventHandler(QObject):
-    keyCodeMap = {Qt.Key_Down:"DownArrow",Qt.Key_Up:"UpArrow", Qt.Key_Left:"LeftArrow", Qt.Key_Right:"RightArrow"}
-    keyStatus = {'UpArrow': 'up', 'DownArrow': 'up', 'LeftArrow': 'up', 'RightArrow': 'up', }
 
-    def __init__(self, ui):
-        super().__init__()
-        self.ui=ui
+def get_model_dir():
+    model_dir = os.path.join(get_data_dir(),'model')
+    return os.path.normpath(model_dir)
 
-    def getKeyStr(self, keyCode):
-        key=self.keyCodeMap.get(keyCode,"Unknown")
-        return key;
 
-    def eventFilter(self, source, event):
+def get_model_file():
+    model_dir = os.path.join(get_model_dir(),'trained_model_v1.h5')
+    return os.path.normpath(model_dir)
 
-        if event.type() == QtCore.QEvent.KeyRelease:
-            if (event.isAutoRepeat()):
-                return False;
-            key=self.getKeyStr(event.key())
-            print('KeyRelease:'+key)
-            if(key in self.keyStatus.keys()):
-                self.keyStatus[key]='up'
 
-        if event.type() == QtCore.QEvent.KeyPress:
-            if(self.ui.captureFrames==False):
-                self.ui.captureFrames = True
-            if (event.isAutoRepeat()):
-                #print('Skip :: Auto Event')
-                return False;
-            key = self.getKeyStr(event.key())
-            print('KeyPress: ' + key)
-            if(key in self.keyStatus.keys()):
-                self.keyStatus[key]='down'
+def get_model():
+    model = load_model(get_model_file())
+    return model
 
-        return False
+
+def get_action_for_image(img,model):
+    image_dim = (256, 256)
+    img = img.resize(image_dim, Image.LANCZOS)
+    img=img.convert('L')
+    img_arr = np.array(img)
+    img_arr=img_arr.reshape(image_dim[0],image_dim[1],1)
+    test_x=np.array([img_arr])
+    output=model.predict(test_x)
+    classes = ['Accelerate', 'TurnLeft', 'TurnRight', 'DoNothing']
+    action = classes[np.argmax(output)]
+    return action;
+
+
+def get_key_for_action(action):
+    key_map={
+        'Accelerate': Qt.Key_Up,
+        'TurnLeft': Qt.Key_Left,
+        'TurnRight': Qt.Key_Right,
+        'DoNothing': Qt.Key_Up
+    }
+    return key_map[action]
 
 
 class UI(QApplication):
 
     def installKeyFilter(self):
-        self._handler = EventHandler(self)
         UI.instance().installEventFilter(self._handler)
         #self.browser.focusProxy().installEventFilter(_handler)
+
+    def getBrowserScreenshot(self):
+        #print('Taking screenshot')
+        windowSize = self.browser.size()
+        pixmap = QPixmap(windowSize)
+        self.browser.render(pixmap)
+        buffer = QBuffer()
+        buffer.open(QBuffer.ReadWrite)
+        pixmap.save(buffer, "PNG")
+        pil_im = Image.open(io.BytesIO(buffer.data()))
+        return pil_im
+
+
+    def getFrameAndDrive(self):
+        image = self.getBrowserScreenshot()
+        action=get_action_for_image(image, self.model)
+        key=get_key_for_action(action)
+        print(action+" --> "+str(key))
+        event_key_press = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+        event_key_up = QKeyEvent(QEvent.KeyRelease, key, Qt.NoModifier)
+        recipient = self.browser.focusProxy()
+        QApplication.postEvent(recipient, event_key_press)
+        time.sleep(0.025)
+        QApplication.postEvent(recipient, event_key_up)
+        return
+
 
     def __init__(self, argv):
         super(UI, self).__init__(argv)
         margin = 22
 
+        self.model = get_model()
         self.browser = QWebEngineView()
         url = 'http://localhost:'+str(http_port)+'/driving_sim/racer1/javascript-racer/v2.curves.html'
         print("Loading URL : "+url)
         self.browser.setGeometry(200, 200, 640 + margin, 480 + margin)
         self.browser.load(QUrl(url))
         self.browser.show()
-        self.thread = background_threds.DriverThread.GameDriverThread(ui=self,interval=.05)
+        self.thread = background_threds.DriverThread.GameDriverThread(ui=self,interval=.5)
+        self.thread.driveSignal.connect(self.getFrameAndDrive)
+
+
 
 
 class ThreadingServer(ThreadingMixIn, HTTPServer):

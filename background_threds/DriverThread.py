@@ -6,10 +6,13 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QApplication
 
 
+
+
+
 class GameDriverThread(QThread):
     """ It will keep taking screenshots till application exists.
     """
-    takeScreenShotSignal = pyqtSignal(str, name='driveThread')
+    driveSignal = pyqtSignal(name='driveSignal')
 
     def __init__(self, ui, interval=.05 ):
         """ Constructor
@@ -21,6 +24,9 @@ class GameDriverThread(QThread):
         self.ui = ui
         self.interval = interval
         self.seq=0
+
+
+
         thread = self
         thread.daemon = True                            # Daemonize thread
         thread.start()                                  # Start the execution
@@ -28,6 +34,12 @@ class GameDriverThread(QThread):
     def run(self):
         while True:
             time.sleep(self.interval)
+            self.seq+=1
+            if(self.seq*self.interval>0):
+                self.driveSignal.emit()
+
+            '''
             event = QKeyEvent(QEvent.KeyPress, Qt.Key_Up,  Qt.NoModifier)
             recipient = self.ui.browser.focusProxy()
             QApplication.postEvent(recipient, event)
+            '''
