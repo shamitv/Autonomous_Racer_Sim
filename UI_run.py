@@ -81,7 +81,7 @@ class UI(QApplication):
         return pil_im
 
 
-    def getFrameAndDrive(self):
+    def getFrameAndDrive_bkp(self):
         image = self.getBrowserScreenshot()
         action=get_action_for_image(image, self.model)
         key=get_key_for_action(action)
@@ -93,6 +93,23 @@ class UI(QApplication):
         time.sleep(0.025)
         QApplication.postEvent(recipient, event_key_up)
         return
+
+
+    def sendKey(self,key):
+        event_key_press = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+        recipient = self.browser.focusProxy()
+        QApplication.postEvent(recipient, event_key_press)
+
+
+    def getFrameAndDrive(self):
+        image = self.getBrowserScreenshot()
+        action=get_action_for_image(image, self.model)
+        key = get_key_for_action(action)
+        print(action + " --> " + str(key))
+        self.sendKey(Qt.Key_Up);
+        self.sendKey(key);
+        return
+
 
 
     def __init__(self, argv):
