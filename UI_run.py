@@ -57,6 +57,7 @@ def get_key_for_action(action):
     key_map={
         'Accelerate': Qt.Key_Up,
         'TurnLeft': Qt.Key_Left,
+        #'TurnLeft': Qt.Key_Right,
         'TurnRight': Qt.Key_Right,
         'DoNothing': Qt.Key_Up
     }
@@ -90,16 +91,22 @@ class UI(QApplication):
         event_key_up = QKeyEvent(QEvent.KeyRelease, key, Qt.NoModifier)
         recipient = self.browser.focusProxy()
         QApplication.postEvent(recipient, event_key_press)
-        #time.sleep(0.025)
+        #time.sleep(0.0025)
         QApplication.postEvent(recipient, event_key_up)
         return
 
+    curKey=None
 
     def sendKey(self,key):
-        event_key_press = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
         recipient = self.browser.focusProxy()
-        QApplication.postEvent(recipient, event_key_press)
+        if( self.curKey is not None and key!=self.curKey):
+            event_key_up = QKeyEvent(QEvent.KeyRelease, self.curKey, Qt.NoModifier)
+            QApplication.postEvent(recipient, event_key_up)
 
+        event_key_press = QKeyEvent(QEvent.KeyPress, key, Qt.NoModifier)
+        QApplication.postEvent(recipient, event_key_press)
+        if(key != Qt.Key_Up):
+            self.curKey = key
 
     def getFrameAndDrive(self):
         image = self.getBrowserScreenshot()
@@ -123,7 +130,7 @@ class UI(QApplication):
         self.browser.setGeometry(200, 200, 640 + margin, 480 + margin)
         self.browser.load(QUrl(url))
         self.browser.show()
-        self.thread = background_threds.DriverThread.GameDriverThread(ui=self,interval=.5)
+        self.thread = background_threds.DriverThread.GameDriverThread(ui=self,interval=.2)
         self.thread.driveSignal.connect(self.getFrameAndDrive)
 
 
@@ -133,6 +140,7 @@ class ThreadingServer(ThreadingMixIn, HTTPServer):
     pass
 
 if __name__ == '__main__':
+    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"]="--remote-debugging-port=8844"
     print("App Init start")
     print("Starting http server on port :: "+str(http_port))
     serveraddr = ('', http_port)
