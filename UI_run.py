@@ -31,7 +31,7 @@ def get_model_dir():
 
 
 def get_model_file():
-    model_dir = os.path.join(get_model_dir(),'trained_model_v1.h5')
+    model_dir = os.path.join(get_model_dir(),'trained_model_v2.h5')
     return os.path.normpath(model_dir)
 
 
@@ -48,7 +48,7 @@ def get_action_for_image(img,model):
     img_arr=img_arr.reshape(image_dim[0],image_dim[1],1)
     test_x=np.array([img_arr])
     output=model.predict(test_x)
-    classes = ['Accelerate', 'TurnLeft', 'TurnRight', 'DoNothing']
+    classes = ['Accelerate', 'DoNothing', 'TurnRight', 'TurnLeft']
     action = classes[np.argmax(output)]
     return action;
 
@@ -90,7 +90,7 @@ class UI(QApplication):
         event_key_up = QKeyEvent(QEvent.KeyRelease, key, Qt.NoModifier)
         recipient = self.browser.focusProxy()
         QApplication.postEvent(recipient, event_key_press)
-        time.sleep(0.025)
+        #time.sleep(0.025)
         QApplication.postEvent(recipient, event_key_up)
         return
 

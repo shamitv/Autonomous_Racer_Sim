@@ -7,7 +7,7 @@ from keras.layers. normalization import BatchNormalization
 from keras.preprocessing.image import ImageDataGenerator
 
 data_set_name='set1'
-
+classes = ['Accelerate', 'DoNothing', 'TurnLeft', 'TurnRight']
 
 def get_data_dir():
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -63,12 +63,14 @@ def get_data_generators(image_dim,batch_size):
         data_generator.flow_from_dataframe(df,x_col='imgFile',y_col='action',
                                            target_size=(image_dim, image_dim),color_mode='grayscale',
                                            class_mode='categorical', batch_size=batch_size,
+                                           classes=classes,
                                            subset='training')
 
     validation_generator = \
         data_generator.flow_from_dataframe(df,x_col='imgFile',y_col='action',
                                            target_size = (image_dim, image_dim),color_mode='grayscale',
                                            class_mode='categorical', batch_size=batch_size,
+                                           classes=classes,
                                            subset="validation")
 
     return train_generator , validation_generator
@@ -91,9 +93,7 @@ num_test_images=validation_generator.samples
 
 print('Got generators')
 
-classes=df['action'].unique()
-
-num_classes = classes.shape[0]
+num_classes = len(classes)
 
 model = define_model(image_dim,num_channels,num_classes)
 
@@ -108,5 +108,5 @@ model.fit_generator(
 
 model_dir = get_model_dir()
 os.makedirs(model_dir,exist_ok=True)
-model_file = os.path.join(model_dir,'trained_model_v1.h5')
+model_file = os.path.join(model_dir,'trained_model_v2.h5')
 model.save(model_file)
