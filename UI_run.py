@@ -31,7 +31,7 @@ def get_model_dir():
 
 
 def get_model_file():
-    model_dir = os.path.join(get_model_dir(),'trained_model_v2.h5')
+    model_dir = os.path.join(get_model_dir(),'model_v3-03-0.96.h5')
     return os.path.normpath(model_dir)
 
 

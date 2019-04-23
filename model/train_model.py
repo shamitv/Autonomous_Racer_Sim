@@ -110,7 +110,7 @@ callbacks_list = [checkpoint]
 model.fit_generator(
         train_generator,
         steps_per_epoch=num_train_images/batch_size,
-        epochs=5,
+        epochs=50,
         validation_steps=num_test_images/batch_size,
         validation_data=validation_generator,
         callbacks=callbacks_list)
