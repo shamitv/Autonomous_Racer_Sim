@@ -102,7 +102,7 @@ model.summary()
 
 model_dir = get_model_dir()
 os.makedirs(model_dir,exist_ok=True)
-model_file = os.path.join(model_dir,'model_v3-{epoch:02d}-{val_acc:.2f}.h5')
+model_file = os.path.join(model_dir,'model_v3-epoch-{epoch:02d}-val_acc-{val_acc:.2f}.h5')
 
 checkpoint = ModelCheckpoint(model_file , monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 callbacks_list = [checkpoint]
